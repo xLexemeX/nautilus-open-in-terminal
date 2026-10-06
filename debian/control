@@ -1,0 +1,19 @@
+Source: nautilus-open-in-terminal
+Section: gnome
+Priority: optional
+Maintainer: xLexemeX <xlexemex@proton.me>
+Build-Depends: debhelper-compat (= 13),
+               meson,
+               pkgconf,
+               libglib2.0-dev,
+               libnautilus-extension-dev (>= 43)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+
+Package: nautilus-open-in-terminal
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, nautilus, gnome-terminal | ptyxis
+Description: Open in Terminal entry for the Nautilus context menu
+ Adds "Open in Terminal" to the main right-click menu in Nautilus, for
+ folders and for the background of the current folder. Opens GNOME
+ Terminal or Ptyxis, chosen through GSettings.

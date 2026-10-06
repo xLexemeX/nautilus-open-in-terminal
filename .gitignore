@@ -1,0 +1,7 @@
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/files
+debian/nautilus-open-in-terminal/
+debian/*.substvars
+obj-*/
+build/
