@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    remove|purge)
+        rm -f /usr/share/glib-2.0/schemas/io.github.xlexemex.nautilus-open-in-terminal.gschema.xml
+        if command -v glib-compile-schemas >/dev/null 2>&1; then
+            glib-compile-schemas /usr/share/glib-2.0/schemas
+        fi
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

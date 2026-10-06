@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+#include <gio/gdesktopappinfo.h>
 #include <gio/gio.h>
 #include <nautilus-extension.h>
 
@@ -35,29 +36,77 @@ load_settings (void)
     return schema != NULL ? g_settings_new_full (schema, NULL, NULL) : NULL;
 }
 
+/* Builds the command for a terminal's desktop entry the way the Default
+ * Terminal spec (xdg-terminal-exec) does: prefer the entry's "new-window"
+ * action, and pass the folder through X-TerminalArgDir when it has one. */
+static GStrv
+build_command (const char *terminal,
+               const char *path)
+{
+    g_autofree char *desktop_id = g_strconcat (terminal, ".desktop", NULL);
+    g_autoptr (GDesktopAppInfo) info = g_desktop_app_info_new (desktop_id);
+    g_autoptr (GKeyFile) keyfile = g_key_file_new ();
+    g_autoptr (GStrvBuilder) builder = g_strv_builder_new ();
+    g_auto (GStrv) actions = NULL;
+    g_autofree char *exec = NULL;
+    g_autofree char *dir_arg = NULL;
+    g_auto (GStrv) argv = NULL;
+
+    if (info == NULL ||
+        !g_key_file_load_from_file (keyfile, g_desktop_app_info_get_filename (info), G_KEY_FILE_NONE, NULL))
+        return NULL;
+
+    actions = g_key_file_get_string_list (keyfile, G_KEY_FILE_DESKTOP_GROUP, G_KEY_FILE_DESKTOP_KEY_ACTIONS, NULL, NULL);
+    if (actions != NULL && g_strv_contains ((const char * const *) actions, "new-window"))
+        exec = g_key_file_get_string (keyfile, "Desktop Action new-window", G_KEY_FILE_DESKTOP_KEY_EXEC, NULL);
+    if (exec == NULL)
+        exec = g_key_file_get_string (keyfile, G_KEY_FILE_DESKTOP_GROUP, G_KEY_FILE_DESKTOP_KEY_EXEC, NULL);
+    if (exec == NULL || !g_shell_parse_argv (exec, NULL, &argv, NULL))
+        return NULL;
+
+    for (char **arg = argv; *arg != NULL; arg++)
+    {
+        /* Field codes don't apply when opening a folder. */
+        if ((*arg)[0] == '%' && (*arg)[1] != '\0' && (*arg)[1] != '%' && (*arg)[2] == '\0')
+            continue;
+        g_strv_builder_add (builder, (*arg)[0] == '%' && (*arg)[1] == '%' ? *arg + 1 : *arg);
+    }
+
+    dir_arg = g_key_file_get_string (keyfile, G_KEY_FILE_DESKTOP_GROUP, "X-TerminalArgDir", NULL);
+    if (dir_arg != NULL && g_str_has_suffix (dir_arg, "="))
+    {
+        g_strv_builder_take (builder, g_strconcat (dir_arg, path, NULL));
+    }
+    else if (dir_arg != NULL && dir_arg[0] != '\0')
+    {
+        g_strv_builder_add (builder, dir_arg);
+        g_strv_builder_add (builder, path);
+    }
+
+    return g_strv_builder_end (builder);
+}
+
 static void
 on_activate (NautilusMenuItem *item,
              OpenInTerminal   *self)
 {
     const char *path = g_object_get_data (G_OBJECT (item), "path");
     g_autofree char *terminal = NULL;
+    g_auto (GStrv) argv = NULL;
     g_autoptr (GError) error = NULL;
 
     if (self->settings != NULL)
         terminal = g_settings_get_string (self->settings, "terminal");
 
-    if (g_strcmp0 (terminal, "ptyxis") == 0)
+    argv = terminal != NULL ? build_command (terminal, path) : NULL;
+    if (argv == NULL)
     {
-        const char *argv[] = { "ptyxis", "--new-window", "--working-directory", path, NULL };
-        g_spawn_async (path, (char **) argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error);
-    }
-    else
-    {
-        const char *argv[] = { "gnome-terminal", "--working-directory", path, NULL };
-        g_spawn_async (path, (char **) argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error);
+        g_warning ("Open in Terminal: no installed terminal found for '%s'", terminal);
+        return;
     }
 
-    if (error != NULL)
+    /* Terminals without X-TerminalArgDir start in the current directory. */
+    if (!g_spawn_async (path, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error))
         g_warning ("Open in Terminal: %s", error->message);
 }
 

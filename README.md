@@ -8,7 +8,7 @@ folders and for the background of the current folder.
 Download the `.deb` from [Releases](https://github.com/xLexemeX/nautilus-open-in-terminal/releases) and install it:
 
 ```sh
-sudo apt install ./nautilus-open-in-terminal_1.0.0_amd64.deb
+sudo apt install ./nautilus-open-in-terminal_1.1.0_amd64.deb
 nautilus -q
 ```
 
@@ -16,7 +16,7 @@ Or build and install the Debian package yourself:
 
 ```sh
 dpkg-buildpackage -us -uc -b
-sudo apt install ../nautilus-open-in-terminal_1.0.0_amd64.deb
+sudo apt install ../nautilus-open-in-terminal_1.1.0_amd64.deb
 nautilus -q
 ```
 
@@ -30,18 +30,21 @@ sudo meson install -C build
 nautilus -q
 ```
 
+When installed from source, rerun
+`sudo /usr/libexec/nautilus-open-in-terminal/update-schema.sh` after
+installing or removing a terminal.
+
 ## Choose the terminal
 
-GNOME Terminal is the default. To switch to Ptyxis:
+Every installed terminal is offered, and terminals installed later are
+added automatically. GNOME Terminal is the default when it's installed.
+
+Pick one in dconf Editor under
+`/io/github/xlexemex/nautilus-open-in-terminal/terminal`, or from the
+command line using the terminal's desktop ID:
 
 ```sh
-gsettings set io.github.xlexemex.nautilus-open-in-terminal terminal ptyxis
-```
-
-To switch back:
-
-```sh
-gsettings set io.github.xlexemex.nautilus-open-in-terminal terminal gnome-terminal
+gsettings set io.github.xlexemex.nautilus-open-in-terminal terminal org.gnome.Ptyxis
 ```
 
 ## License

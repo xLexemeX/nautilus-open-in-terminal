@@ -12,8 +12,9 @@ Rules-Requires-Root: no
 
 Package: nautilus-open-in-terminal
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, nautilus, gnome-terminal | ptyxis
+Depends: ${shlibs:Depends}, ${misc:Depends}, nautilus, libglib2.0-bin, gnome-terminal | x-terminal-emulator
 Description: Open in Terminal entry for the Nautilus context menu
  Adds "Open in Terminal" to the main right-click menu in Nautilus, for
- folders and for the background of the current folder. Opens GNOME
- Terminal or Ptyxis, chosen through GSettings.
+ folders and for the background of the current folder. Any installed
+ terminal can be chosen through GSettings, and terminals installed
+ later are picked up automatically.
