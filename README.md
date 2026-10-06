@@ -5,7 +5,14 @@ folders and for the background of the current folder.
 
 ## Install
 
-Build and install the Debian package:
+Download the `.deb` from [Releases](https://github.com/xLexemeX/nautilus-open-in-terminal/releases) and install it:
+
+```sh
+sudo apt install ./nautilus-open-in-terminal_1.0.0_amd64.deb
+nautilus -q
+```
+
+Or build and install the Debian package yourself:
 
 ```sh
 dpkg-buildpackage -us -uc -b
